@@ -24,6 +24,8 @@ const UserRoleMappingPage = () => {
   const [selectedRole, setSelectedRole] = useState<string>();
   const [usersMoved, setUsersMoved] = useState<Array<FormEntity>>([]);
   const [users, setSelectedUsers] = useState<Array<FormEntity>>(data.USERS);
+  const [elementBeingDraggedFromSection, setElementBeingDraggedFromSection] =
+    useState<SECTION_TYPE>();
 
   const checkAndMoveDraggedElement = useCallback(
     (
@@ -31,6 +33,7 @@ const UserRoleMappingPage = () => {
       targetSection: SECTION_TYPE
     ): [elementId: string, isDraggedIntoTargetPosition: boolean] => {
       if (e.target instanceof HTMLElement) {
+        console.log(e.target.innerText);
         const draggedElement = e.target as HTMLElement;
         const droppedBoundary = draggedElement.getBoundingClientRect();
         const elementId = draggedElement.id;
@@ -67,7 +70,14 @@ const UserRoleMappingPage = () => {
       </Form.Select>
       {selectedRole && (
         <>
-          <div className="d-flex column-gap-5 justify-content-around">
+          <div
+            className="d-flex column-gap-5 justify-content-around"
+            style={{
+              width: '100%',
+              overflowX: 'hidden',
+              position: 'sticky',
+              height: 'fit-content'
+            }}>
             <UserListBox
               sectionType={SECTION_TYPE.USER_SECTION}
               label="Users"
@@ -75,8 +85,11 @@ const UserRoleMappingPage = () => {
               roleNameField={roleNameField}
               userRoleName={userRoleName}
               cardColor="blue"
+              elementBeingDraggedFromPosition={elementBeingDraggedFromSection}
+              draggableStartHandler={(value) => setElementBeingDraggedFromSection(value)}
               users={users.filter((e) => userRoleName && e[userRoleName] !== selectedRole)} //excluding users who has been already assigned the role selected for mapping
-              draggableHandler={(e) => {
+              draggableStopHandler={(e) => {
+                setElementBeingDraggedFromSection(undefined);
                 const [elementId, isDraggedIntoTargetPosition] = checkAndMoveDraggedElement(
                   e,
                   SECTION_TYPE.ROLE_SECTION
@@ -103,8 +116,11 @@ const UserRoleMappingPage = () => {
               roleNameField={roleNameField}
               userRoleName={userRoleName}
               cardColor="green"
+              elementBeingDraggedFromPosition={elementBeingDraggedFromSection}
+              draggableStartHandler={(value) => setElementBeingDraggedFromSection(value)}
               users={usersMoved}
-              draggableHandler={(e) => {
+              draggableStopHandler={(e) => {
+                setElementBeingDraggedFromSection(undefined);
                 const [elementId, isDraggedIntoTargetPosition] = checkAndMoveDraggedElement(
                   e,
                   SECTION_TYPE.USER_SECTION
@@ -142,12 +158,16 @@ const UserListBox = ({
   userNameField,
   userRoleName,
   roleNameField,
-  draggableHandler,
+  draggableStopHandler,
+  draggableStartHandler,
+  elementBeingDraggedFromPosition,
   sectionType,
   cardColor
 }: {
   label: string;
-  draggableHandler: (e: DraggableEvent) => void;
+  draggableStopHandler: (e: DraggableEvent) => void;
+  draggableStartHandler: (value: SECTION_TYPE) => void;
+  elementBeingDraggedFromPosition: SECTION_TYPE | undefined;
   users: Array<FormEntity>;
   userNameField: string;
   userRoleName: string;
@@ -165,24 +185,54 @@ const UserListBox = ({
         ref={containerRef}
         style={{ height: 300, overflowY: 'scroll', overflowX: 'hidden', border: '1px solid' }}>
         <div className="p-1" style={{ minHeight: 270, width: 200 }}>
-          {users.map((user) => (
-            <Draggable
-              key={user.id}
-              onStop={draggableHandler}
-              onDrag={() => {
-                if (containerRef.current) {
-                  containerRef.current.style.overflow = 'visible'; //workaround to make drag working as expected when scrollbars appear. otherwise, dragging happens only within the container
-                }
-              }}>
-              <div
-                className="mt-2 p-1 text-truncate overflow-hidden"
-                style={{ border: `1px solid ${cardColor}`, borderRadius: 10 }}
-                id={user.id}>
-                {user[userNameField]} |{' '}
-                {roles.find((e) => e.id === user[userRoleName])?.[roleNameField]}
-              </div>
-            </Draggable>
-          ))}
+          {users.map((user) => {
+            return (
+              <>
+                {(!elementBeingDraggedFromPosition ||
+                  elementBeingDraggedFromPosition === sectionType) && (
+                  <Draggable
+                    key={user.id}
+                    onStart={() => draggableStartHandler(sectionType)}
+                    onStop={(e) => {
+                      draggableStopHandler(e);
+                      if (containerRef.current) {
+                        containerRef.current.style.overflowY = 'scroll';
+                      }
+                    }}
+                    onDrag={() => {
+                      if (containerRef.current) {
+                        containerRef.current.style.overflowY = 'clip';
+                        containerRef.current.style.overflowX = 'visible'; //workaround to make drag working as expected when scrollbars appear. otherwise, dragging happens only within the container
+                        containerRef.current.style.zIndex = '10';
+                      }
+                    }}>
+                    <div
+                      className="mt-2 p-1 text-truncate overflow-hidden bg-white"
+                      style={{
+                        border: `1px solid ${cardColor}`,
+                        borderRadius: 10,
+                        cursor: 'pointer',
+                        userSelect: 'none'
+                      }}
+                      id={user.id}>
+                      {user[userNameField]} |{' '}
+                      {roles.find((e) => e.id === user[userRoleName])?.[roleNameField]}
+                    </div>
+                  </Draggable>
+                )}
+                {elementBeingDraggedFromPosition &&
+                  elementBeingDraggedFromPosition !== sectionType && (
+                    <div
+                      className="mt-2 p-1 text-truncate overflow-hidden bg-white"
+                      style={{ border: `1px solid ${cardColor}`, borderRadius: 10 }}
+                      id={user.id}>
+                      {user[userNameField]} |{' '}
+                      {roles.find((e) => e.id === user[userRoleName])?.[roleNameField]}
+                    </div>
+                  )}
+              </>
+            );
+          })}
         </div>
       </div>
     </div>
