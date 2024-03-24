@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import Draggable, { DraggableEvent } from 'react-draggable';
 import { roleFormFieldsConfig } from 'src/config/fields/roles';
@@ -78,6 +78,7 @@ const UserRoleMappingPage = () => {
               position: 'sticky',
               height: 'fit-content'
             }}>
+            {/* Render list box for users */}
             <UserListBox
               sectionType={SECTION_TYPE.USER_SECTION}
               label="Users"
@@ -109,6 +110,8 @@ const UserRoleMappingPage = () => {
                 }
               }}
             />
+
+            {/* Render list box for users to be mapped to new role */}
             <UserListBox
               sectionType={SECTION_TYPE.ROLE_SECTION}
               label={`Role Selected: ${roles.find((e) => e.id === selectedRole)?.[roleNameField]}`}
@@ -187,7 +190,7 @@ const UserListBox = ({
         <div className="p-1" style={{ minHeight: 270, width: 200 }}>
           {users.map((user) => {
             return (
-              <>
+              <Fragment key={user.id}>
                 {(!elementBeingDraggedFromPosition ||
                   elementBeingDraggedFromPosition === sectionType) && (
                   <Draggable
@@ -230,7 +233,7 @@ const UserListBox = ({
                       {roles.find((e) => e.id === user[userRoleName])?.[roleNameField]}
                     </div>
                   )}
-              </>
+              </Fragment>
             );
           })}
         </div>
