@@ -9,7 +9,7 @@ const UserLayout: React.FC = () => {
   return (
     <>
       <Navbar expand="sm" className="bg-body-tertiary">
-        <Container className="px-0 mx-2">
+        <Container className="px-0 mx-2 mw-100">
           <Navbar.Brand>User View</Navbar.Brand>
           <Navbar.Toggle aria-controls="admin-navbar-nav" />
           <Navbar.Collapse id="admin-navbar-nav">
