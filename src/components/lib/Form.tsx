@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { FORM_TYPE, FormEntity } from '../../types/Form';
 import { Formik } from 'formik';
 import * as yup from 'yup';
-import { Button, Col, Form, Row, Toast, ToastContainer } from 'react-bootstrap';
+import { Button, Col, Form, Row } from 'react-bootstrap';
 import { addToStore, updateValueInStore } from '../../store/slices/FormSlice';
 import { useAppDispatch, useAppSelector } from '../../store/store';
 import { formFieldsConfig } from 'src/config/config';
+import ToastMessage from './Toast';
 
 type FormConfig = {
   formType: FORM_TYPE;
@@ -169,28 +170,9 @@ const BasicForm: React.FC<FormConfig> = ({
         }}
       </Formik>
 
-      {
-        <ToastContainer
-          position="top-start"
-          className="text-white"
-          style={{ zIndex: 1, width: '100%', padding: 4 }}>
-          <Toast
-            style={{ width: 'inherit' }}
-            animation={true}
-            show={showToastMessage}
-            onClose={() => setShowToastMessage(false)}
-            bg="success"
-            delay={2000}
-            autohide>
-            <Toast.Body className="d-flex justify-content-between">
-              <div>{id ? 'Data updated successfully' : 'Data created successfully'}</div>
-              <div>
-                <Button type="button" className="btn-close btn-close-white"></Button>
-              </div>
-            </Toast.Body>
-          </Toast>
-        </ToastContainer>
-      }
+      <ToastMessage showToastMessage={showToastMessage} onClose={() => setShowToastMessage(false)}>
+        {id ? 'Data updated successfully' : 'Data created successfully'}
+      </ToastMessage>
     </>
   );
 };

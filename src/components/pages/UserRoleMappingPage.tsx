@@ -6,6 +6,7 @@ import { userFormFieldsConfig } from 'src/config/fields/users';
 import { updateValueInStore } from 'src/store/slices/FormSlice';
 import { useAppDispatch, useAppSelector } from 'src/store/store';
 import { FORM_TYPE, FormEntity } from 'src/types/Form';
+import ToastMessage from '../lib/Toast';
 
 enum SECTION_TYPE {
   USER_SECTION = 'user-drag-section',
@@ -26,6 +27,7 @@ const UserRoleMappingPage = () => {
   const [users, setSelectedUsers] = useState<Array<FormEntity>>(data.USERS);
   const [elementBeingDraggedFromSection, setElementBeingDraggedFromSection] =
     useState<SECTION_TYPE>();
+  const [showToastMessage, setShowToastMessage] = useState(false);
 
   const checkAndMoveDraggedElement = useCallback(
     (
@@ -33,7 +35,6 @@ const UserRoleMappingPage = () => {
       targetSection: SECTION_TYPE
     ): [elementId: string, isDraggedIntoTargetPosition: boolean] => {
       if (e.target instanceof HTMLElement) {
-        console.log(e.target.innerText);
         const draggedElement = e.target as HTMLElement;
         const droppedBoundary = draggedElement.getBoundingClientRect();
         const elementId = draggedElement.id;
@@ -50,6 +51,7 @@ const UserRoleMappingPage = () => {
     usersMoved.forEach((e) => {
       dispatch(updateValueInStore(e));
     });
+    setShowToastMessage(true);
   };
 
   useEffect(() => {
@@ -58,100 +60,107 @@ const UserRoleMappingPage = () => {
   }, [selectedRole, data.USERS]);
 
   return (
-    <div>
-      Please select the role you wish the users be assigned to:
-      <Form.Select onChange={(e) => setSelectedRole(e.target.value)}>
-        <option></option>
-        {roles.map((role) => (
-          <option value={role.id} key={role.id}>
-            {role[roleNameField]}
-          </option>
-        ))}
-      </Form.Select>
-      {selectedRole && (
-        <>
-          <div
-            className="d-flex column-gap-5 justify-content-around"
-            style={{
-              width: '100%',
-              overflowX: 'hidden',
-              position: 'sticky',
-              height: 'fit-content'
-            }}>
-            {/* Render list box for users */}
-            <UserListBox
-              sectionType={SECTION_TYPE.USER_SECTION}
-              label="Users"
-              userNameField={userNameField}
-              roleNameField={roleNameField}
-              userRoleName={userRoleName}
-              cardColor="blue"
-              elementBeingDraggedFromPosition={elementBeingDraggedFromSection}
-              draggableStartHandler={(value) => setElementBeingDraggedFromSection(value)}
-              users={users.filter((e) => userRoleName && e[userRoleName] !== selectedRole)} //excluding users who has been already assigned the role selected for mapping
-              draggableStopHandler={(e) => {
-                setElementBeingDraggedFromSection(undefined);
-                const [elementId, isDraggedIntoTargetPosition] = checkAndMoveDraggedElement(
-                  e,
-                  SECTION_TYPE.ROLE_SECTION
-                );
-                if (isDraggedIntoTargetPosition) {
-                  const draggedUser = users.find((e) => e.id === elementId);
-                  if (draggedUser) {
-                    setSelectedUsers([...users.filter((e) => e.id !== elementId)]);
-                    setUsersMoved([
-                      ...usersMoved,
-                      { ...draggedUser, [userRoleName]: selectedRole }
-                    ]);
+    <>
+      <div>
+        Please select the role you wish the users be assigned to:
+        <Form.Select onChange={(e) => setSelectedRole(e.target.value)}>
+          <option></option>
+          {roles.map((role) => (
+            <option value={role.id} key={role.id}>
+              {role[roleNameField]}
+            </option>
+          ))}
+        </Form.Select>
+        {selectedRole && (
+          <>
+            <div
+              className="d-flex column-gap-5 justify-content-around"
+              style={{
+                width: '100%',
+                overflowX: 'hidden',
+                position: 'sticky',
+                height: 'fit-content'
+              }}>
+              {/* Render list box for users */}
+              <UserListBox
+                sectionType={SECTION_TYPE.USER_SECTION}
+                label="Users"
+                userNameField={userNameField}
+                roleNameField={roleNameField}
+                userRoleName={userRoleName}
+                cardColor="blue"
+                elementBeingDraggedFromPosition={elementBeingDraggedFromSection}
+                draggableStartHandler={(value) => setElementBeingDraggedFromSection(value)}
+                users={users.filter((e) => userRoleName && e[userRoleName] !== selectedRole)} //excluding users who has been already assigned the role selected for mapping
+                draggableStopHandler={(e) => {
+                  setElementBeingDraggedFromSection(undefined);
+                  const [elementId, isDraggedIntoTargetPosition] = checkAndMoveDraggedElement(
+                    e,
+                    SECTION_TYPE.ROLE_SECTION
+                  );
+                  if (isDraggedIntoTargetPosition) {
+                    const draggedUser = users.find((e) => e.id === elementId);
+                    if (draggedUser) {
+                      setSelectedUsers([...users.filter((e) => e.id !== elementId)]);
+                      setUsersMoved([
+                        ...usersMoved,
+                        { ...draggedUser, [userRoleName]: selectedRole }
+                      ]);
+                    }
+                  } else {
+                    setSelectedUsers([]);
+                    setTimeout(() => setSelectedUsers([...users]), 50);
                   }
-                } else {
-                  setSelectedUsers([]);
-                  setTimeout(() => setSelectedUsers([...users]), 50);
-                }
-              }}
-            />
+                }}
+              />
 
-            {/* Render list box for users to be mapped to new role */}
-            <UserListBox
-              sectionType={SECTION_TYPE.ROLE_SECTION}
-              label={`Role Selected: ${roles.find((e) => e.id === selectedRole)?.[roleNameField]}`}
-              userNameField={userNameField}
-              roleNameField={roleNameField}
-              userRoleName={userRoleName}
-              cardColor="green"
-              elementBeingDraggedFromPosition={elementBeingDraggedFromSection}
-              draggableStartHandler={(value) => setElementBeingDraggedFromSection(value)}
-              users={usersMoved}
-              draggableStopHandler={(e) => {
-                setElementBeingDraggedFromSection(undefined);
-                const [elementId, isDraggedIntoTargetPosition] = checkAndMoveDraggedElement(
-                  e,
-                  SECTION_TYPE.USER_SECTION
-                );
-                if (isDraggedIntoTargetPosition) {
-                  const draggedUser = data.USERS.find((e) => e.id === elementId);
-                  if (draggedUser) {
-                    setUsersMoved([...usersMoved.filter((e) => e.id !== elementId)]);
-                    setSelectedUsers([...users, draggedUser]);
+              {/* Render list box for users to be mapped to new role */}
+              <UserListBox
+                sectionType={SECTION_TYPE.ROLE_SECTION}
+                label={`Role Selected: ${
+                  roles.find((e) => e.id === selectedRole)?.[roleNameField]
+                }`}
+                userNameField={userNameField}
+                roleNameField={roleNameField}
+                userRoleName={userRoleName}
+                cardColor="green"
+                elementBeingDraggedFromPosition={elementBeingDraggedFromSection}
+                draggableStartHandler={(value) => setElementBeingDraggedFromSection(value)}
+                users={usersMoved}
+                draggableStopHandler={(e) => {
+                  setElementBeingDraggedFromSection(undefined);
+                  const [elementId, isDraggedIntoTargetPosition] = checkAndMoveDraggedElement(
+                    e,
+                    SECTION_TYPE.USER_SECTION
+                  );
+                  if (isDraggedIntoTargetPosition) {
+                    const draggedUser = data.USERS.find((e) => e.id === elementId);
+                    if (draggedUser) {
+                      setUsersMoved([...usersMoved.filter((e) => e.id !== elementId)]);
+                      setSelectedUsers([...users, draggedUser]);
+                    }
+                  } else {
+                    setUsersMoved([]);
+                    setTimeout(() => setUsersMoved([...usersMoved]), 50);
                   }
-                } else {
-                  setUsersMoved([]);
-                  setTimeout(() => setUsersMoved([...usersMoved]), 50);
-                }
-              }}
-            />
-          </div>
-          <div className="d-flex justify-content-center mt-5">
-            <Button
-              disabled={usersMoved.length === 0}
-              onClick={updateRole}
-              className="btn btn-primary">
-              Confirm
-            </Button>
-          </div>
-        </>
-      )}
-    </div>
+                }}
+              />
+            </div>
+            <div className="d-flex justify-content-center mt-5">
+              <Button
+                disabled={usersMoved.length === 0}
+                onClick={updateRole}
+                className="btn btn-primary">
+                Confirm
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+      <ToastMessage showToastMessage={showToastMessage} onClose={() => setShowToastMessage(false)}>
+        User roles updated successfully
+      </ToastMessage>
+    </>
   );
 };
 
