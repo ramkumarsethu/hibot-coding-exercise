@@ -192,11 +192,20 @@ const UserListBox = ({
 
   return (
     <div className="mt-5" id={sectionType}>
-      {label}
+      <div style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</div>
       <div
         ref={containerRef}
-        style={{ height: 300, overflowY: 'scroll', overflowX: 'hidden', border: '1px solid' }}>
-        <div className="p-1" style={{ minHeight: 270, width: 200 }}>
+        style={{
+          height: 300,
+          overflowY: 'scroll',
+          overflowX: 'hidden',
+          border: '1px solid',
+          paddingLeft: 5,
+          paddingRight: 5,
+          width: '35vw',
+          borderRadius: 5
+        }}>
+        <div className="p-1" style={{ minHeight: 270 }}>
           {users.map((user) => {
             return (
               <Fragment key={user.id}>
