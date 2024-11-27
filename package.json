@@ -7,7 +7,7 @@
     "tscheck": "tsc",
     "lint": "eslint .",
     "build": "webpack",
-    "start": "webpack serve --open",
+    "start": "webpack serve --open --port 4502",
     "prettify": "prettier ./src --write",
     "test": "jest"
   },
